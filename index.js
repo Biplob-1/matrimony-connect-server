@@ -24,7 +24,11 @@ async function run() {
   try {
     // Connect the client to the server
     await client.connect();
+    const userCollection = client.db('shaadi').collection('users');
     const biodataCollection = client.db('shaadi').collection('biodata');
+
+
+    
 
     // Biodata data insert route
     app.post('/biodatas', async (req, res) => {
@@ -37,6 +41,18 @@ async function run() {
         res.status(500).send('Error inserting biodata');
       }
     });
+
+    app.get('/biodatas', async (req, res) => {
+      try {
+        const email = req.query.email;
+        const query = {email: email}
+        const result = await biodataCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Biodata data fetch error:', error);
+        res.status(500).send('Error fetch biodata');
+      }
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
