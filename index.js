@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@biplob.whidwsu.mongodb.net/?retryWrites=true&w=majority&appName=Biplob`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -51,6 +51,12 @@ async function run() {
       }
     });
 
+    app.delete('/users/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await userCollection.deleteOne(query);
+      res.send(result);
+    })
 
     // Biodata data insert route
     app.post('/biodatas', async (req, res) => {
