@@ -28,7 +28,25 @@ async function run() {
     const biodataCollection = client.db('shaadi').collection('biodata');
 
 
-    
+    //user related api
+   
+    app.post('/users', async (req, res) => {
+      try {
+        const users = req.body;
+        const query = { email: users.email };
+        console.log(users)
+
+        const existingUser = await userCollection.findOne(query);
+        if (existingUser) {
+          return res.send({ message: 'User already exists', insertedId: null });
+        }
+        const result = await userCollection.insertOne(users);
+        res.send({ insertedId: result.insertedId });
+      } catch (error) {
+        console.error('User data insert error:', error);
+      }
+    });
+
 
     // Biodata data insert route
     app.post('/biodatas', async (req, res) => {
