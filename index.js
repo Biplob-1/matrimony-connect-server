@@ -28,23 +28,22 @@ async function run() {
     const userCollection = client.db('shaadi').collection('users');
     const biodataCollection = client.db('shaadi').collection('biodata');
 
-    //jwt related api
+    // jwt related api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: '1h' })
-      res.send({token});
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+      res.send({ token });
     });
 
-    //middelwares jwt
+    // middlewares jwt
     const verifyToken = (req, res, next) => {
-      console.log('inside verify token', req.headers.authorization)
-      if(!req.headers.authorization){
-        return res.status(401).send({message: 'unauthorized access'})
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'unauthorized access' })
       }
       const token = req.headers.authorization.split(' ')[1];
       jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
-        if(error){
-          return res.status(401).send({message: 'unauthorized access'})
+        if (error) {
+          return res.status(401).send({ message: 'unauthorized access' })
         }
         req.decoded = decoded;
         next()
@@ -52,18 +51,18 @@ async function run() {
     };
 
     // use verify admin after verifyToken
-    const verifyAdmin = async(req, res, next) => {
+    const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
-      const query = {email: email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
       const isAdmin = user?.plot === "admin";
-      if(!isAdmin){
-        return res.status(403).send({message: 'forbidden access'})
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' })
       }
       next()
     }
 
-    //user related api
+    // user related api
     app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result);
@@ -71,24 +70,22 @@ async function run() {
 
     app.get('/users/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
-      if(email !== req.decoded.email){
-        return res.status(403).send({message: 'forbidden access'})
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
       }
-      const query = {email: email};
+      const query = { email: email };
       const user = await userCollection.findOne(query);
       let admin = false;
-      if(user) {
+      if (user) {
         admin = user?.plot === 'admin';
       }
-      res.send({admin});
+      res.send({ admin });
     })
-    
+
     app.post('/users', async (req, res) => {
       try {
         const users = req.body;
         const query = { email: users.email };
-        console.log(users)
-
         const existingUser = await userCollection.findOne(query);
         if (existingUser) {
           return res.send({ message: 'User already exists', insertedId: null });
@@ -102,7 +99,7 @@ async function run() {
 
     app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: {
           plot: 'admin',
@@ -114,16 +111,34 @@ async function run() {
 
     app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
+      const query = { _id: new ObjectId(id) };
       const result = await userCollection.deleteOne(query);
       res.send(result);
     })
 
     // Biodata data insert route
-    app.post('/biodatas', async (req, res) => {
+    app.post('/biodatas', verifyToken, async (req, res) => {
       try {
-        const biodatas = req.body;
-        const result = await biodataCollection.insertOne(biodatas);
+        const biodata = req.body;
+
+        // Fetch the latest biodataId from the biodataCollection
+        const latestBiodata = await biodataCollection.find().sort({ biodataId: -1 }).limit(1).toArray();
+        let biodataId = 1;
+
+        if (latestBiodata.length > 0 && !isNaN(latestBiodata[0].biodataId)) {
+          biodataId = parseInt(latestBiodata[0].biodataId, 10) + 1;
+        }
+        console.log('Latest Biodata:', latestBiodata);
+        console.log('New Biodata ID:', biodataId);
+
+        // Add biodataId and createdAt to the biodata object
+        const biodataToAdd = {
+          ...biodata,
+          biodataId: biodataId,
+          createdAt: new Date(),
+        };
+
+        const result = await biodataCollection.insertOne(biodataToAdd);
         res.send(result);
       } catch (error) {
         console.error('Biodata data insert error:', error);
@@ -131,17 +146,37 @@ async function run() {
       }
     });
 
-    app.get('/biodatas', async (req, res) => {
+
+    app.get('/biodatas', verifyToken, async (req, res) => {
       try {
         const email = req.query.email;
-        const query = {email: email}
+        const query = { email: email }
         const result = await biodataCollection.find(query).toArray();
         res.send(result);
       } catch (error) {
         console.error('Biodata data fetch error:', error);
         res.status(500).send('Error fetch biodata');
       }
-    })
+    });
+
+    // Biodata data update route
+    app.put('/biodatas/:id', verifyToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedBiodata = req.body;
+        const filter = { _id: new ObjectId(id) };
+
+        const updateDoc = {
+          $set: updatedBiodata,
+        };
+
+        const result = await biodataCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error('Biodata data update error:', error);
+        res.status(500).send('Error updating biodata');
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
