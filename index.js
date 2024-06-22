@@ -235,6 +235,24 @@ async function run() {
         res.status(500).send('Error inserting favourite');
       }
     });
+    
+    // Check if a biodata is already in favourites
+    app.get('/favourites/check', verifyToken, async (req, res) => {
+      try {
+        const { userEmail, biodataId } = req.query;
+        const query = { userEmail: userEmail, biodataId: parseInt(biodataId) };
+        const existingFavourite = await favouriteCollection.findOne(query);
+
+        if (existingFavourite) {
+          return res.send({ exists: true });
+        } else {
+          return res.send({ exists: false });
+        }
+      } catch (error) {
+        console.error('Error checking favourite:', error);
+        res.status(500).send('Error checking favourite');
+      }
+    });
 
 
     // Send a ping to confirm a successful connection
