@@ -212,48 +212,32 @@ async function run() {
     // Add to Favourite API
     app.post('/favourites', verifyToken, async (req, res) => {
       try {
-        const favourite = req.body;
+        const favouriteData = req.body;
+        const { userEmail, biodataUserBiodataId } = favouriteData;
 
-        // Check if the favourite already exists
-        const query = { userId: favourite.userId, biodataId: favourite.biodataId };
-        const existingFavourite = await favouriteCollection.findOne(query);
+        // Check if the entry already exists
+        const existingFavourite = await favouriteCollection.findOne({
+          userEmail: userEmail,
+          biodataUserBiodataId: biodataUserBiodataId,
+        });
 
         if (existingFavourite) {
           return res.status(400).send({ message: 'Biodata already in favourites' });
         }
 
-        // Add createdAt to the favourite object
-        const favouriteToAdd = {
-          ...favourite,
-          createdAt: new Date(),
-        };
+        // Add createdAt timestamp (optional)
+        favouriteData.createdAt = new Date();
 
-        const result = await favouriteCollection.insertOne(favouriteToAdd);
-        res.send(result);
+        const result = await favouriteCollection.insertOne(favouriteData);
+        res.status(201).send(result);
       } catch (error) {
-        console.error('Favourite data insert error:', error);
-        res.status(500).send('Error inserting favourite');
+        console.error('Error adding to favourites:', error);
+        res.status(500).send('Error adding to favourites');
       }
     });
+
+
     
-    // Check if a biodata is already in favourites
-    app.get('/favourites/check', verifyToken, async (req, res) => {
-      try {
-        const { userEmail, biodataId } = req.query;
-        const query = { userEmail: userEmail, biodataId: parseInt(biodataId) };
-        const existingFavourite = await favouriteCollection.findOne(query);
-
-        if (existingFavourite) {
-          return res.send({ exists: true });
-        } else {
-          return res.send({ exists: false });
-        }
-      } catch (error) {
-        console.error('Error checking favourite:', error);
-        res.status(500).send('Error checking favourite');
-      }
-    });
-
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
