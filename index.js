@@ -173,7 +173,7 @@ async function run() {
     });
 
     // single biodata fetch api using id
-    app.get('/allBiodatas/:id', async (req, res) => {
+    app.get('/allBiodatas/:id', verifyToken, async (req, res) => {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id)};
@@ -235,6 +235,33 @@ async function run() {
         res.status(500).send('Error adding to favourites');
       }
     });
+
+    // Backend API to fetch user's favourite biodatas
+    app.get('/favourites', verifyToken, async (req, res) => {
+      try {
+        const userEmail = req.decoded.email;
+        const query = { userEmail: userEmail };
+        const result = await favouriteCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Error fetching favourite biodatas:', error);
+        res.status(500).send('Error fetching favourite biodatas');
+      }
+    });
+
+    app.delete('/favourites/:id', verifyToken, async (req, res) => {
+      try {
+        const favouriteId = req.params.id;
+        const query = { _id: new ObjectId(favouriteId) };
+        const result = await favouriteCollection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        console.error('Error deleting favourite:', error);
+        res.status(500).send('Error deleting favourite');
+      }
+    });
+    
+
 
 
     
