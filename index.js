@@ -158,6 +158,7 @@ async function run() {
         res.status(500).send('Error fetch biodata');
       }
     });
+
     app.get('/allBiodatas', async (req, res) => {
       try {
         const email = req.query.email;
@@ -167,6 +168,19 @@ async function run() {
       } catch (error) {
         console.error('Biodata data fetch error:', error);
         res.status(500).send('Error fetch biodata');
+      }
+    });
+
+    // single biodata fetch api using id
+    app.get('/allBiodatas/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id)};
+        const result = await biodataCollection.findOne(query);
+        res.send(result);
+      } catch (error) {
+        console.error('Biodata data Details error:', error);
+        res.status(500).send('Error fetch biodata details');
       }
     });
     // Biodata data update route
