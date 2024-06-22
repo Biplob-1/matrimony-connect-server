@@ -158,7 +158,17 @@ async function run() {
         res.status(500).send('Error fetch biodata');
       }
     });
-
+    app.get('/allBiodatas', async (req, res) => {
+      try {
+        const email = req.query.email;
+        const query = { email: email }
+        const result = await biodataCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Biodata data fetch error:', error);
+        res.status(500).send('Error fetch biodata');
+      }
+    });
     // Biodata data update route
     app.put('/biodatas/:id', verifyToken, async (req, res) => {
       try {
@@ -187,7 +197,7 @@ async function run() {
     // await client.db("admin").command({ ping: 1 });
     // console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-    // Start the server after successful DB connection
+    // Start the server after successful DB connectionver
     app.listen(port, () => {
       console.log(`Shaadi server is running on port ${port}`);
     });
