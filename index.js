@@ -27,6 +27,7 @@ async function run() {
     // await client.connect();
     const userCollection = client.db('shaadi').collection('users');
     const biodataCollection = client.db('shaadi').collection('biodata');
+    const favouriteCollection = client.db('shaadi').collection('favourite');
 
     // jwt related api
     app.post('/jwt', async (req, res) => {
@@ -206,6 +207,35 @@ async function run() {
         res.status(500).send('Error updating biodata');
       }
     });
+
+
+    // Add to Favourite API
+    app.post('/favourites', verifyToken, async (req, res) => {
+      try {
+        const favourite = req.body;
+
+        // Check if the favourite already exists
+        const query = { userId: favourite.userId, biodataId: favourite.biodataId };
+        const existingFavourite = await favouriteCollection.findOne(query);
+
+        if (existingFavourite) {
+          return res.status(400).send({ message: 'Biodata already in favourites' });
+        }
+
+        // Add createdAt to the favourite object
+        const favouriteToAdd = {
+          ...favourite,
+          createdAt: new Date(),
+        };
+
+        const result = await favouriteCollection.insertOne(favouriteToAdd);
+        res.send(result);
+      } catch (error) {
+        console.error('Favourite data insert error:', error);
+        res.status(500).send('Error inserting favourite');
+      }
+    });
+
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
