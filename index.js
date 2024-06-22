@@ -24,7 +24,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server
-    await client.connect();
+    // await client.connect();
     const userCollection = client.db('shaadi').collection('users');
     const biodataCollection = client.db('shaadi').collection('biodata');
 
@@ -164,6 +164,11 @@ async function run() {
       try {
         const id = req.params.id;
         const updatedBiodata = req.body;
+
+        // Ensure the id is valid
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({ message: 'Invalid ID format' });
+        }
         const filter = { _id: new ObjectId(id) };
 
         const updateDoc = {
@@ -179,8 +184,8 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     // Start the server after successful DB connection
     app.listen(port, () => {
