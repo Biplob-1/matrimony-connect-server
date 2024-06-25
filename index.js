@@ -279,7 +279,20 @@ async function run() {
       }
     });
   
+    app.post('/insertPayment', async (req, res) => {
+      try {
+        const paymentData = req.body;
+        const result = await paymentCollection.insertOne(paymentData);
+        res.send(result);
+      } catch (error) {
+        console.error('Error inserting payment data:', error);
+        res.status(500).send('Error inserting payment data');
+      }
+    });
     
+   
+
+
     
     
 
