@@ -314,6 +314,23 @@ async function run() {
       }
     });
 
+    
+    app.patch('/contact-requests/:id/approve', verifyToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            type: 'Approved', 
+          }
+        };
+        const result = await paymentCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error('Error approving contact request:', error);
+        res.status(500).send('Error approving contact request');
+      }
+    });
 
     
     
