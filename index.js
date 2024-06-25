@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const stripe = require('stripe')(process.env.PAYMENT_SECRET); 
 const port = process.env.PORT || 5000;
 
 // MIDDLEWARE
@@ -28,6 +29,7 @@ async function run() {
     const userCollection = client.db('shaadi').collection('users');
     const biodataCollection = client.db('shaadi').collection('biodata');
     const favouriteCollection = client.db('shaadi').collection('favourite');
+    const paymentCollection = client.db('shaadi').collection('payments');
 
     // jwt related api
     app.post('/jwt', async (req, res) => {
@@ -173,7 +175,7 @@ async function run() {
     });
 
     // single biodata fetch api using id
-    app.get('/allBiodatas/:id', verifyToken, async (req, res) => {
+    app.get('/allBiodatas/:id',  async (req, res) => {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id)};
@@ -261,7 +263,25 @@ async function run() {
       }
     });
     
-
+    app.post('/payment', async (req, res) => {
+      try {
+        const { amount } = req.body;
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount * 100, 
+          currency: 'usd',
+        });
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      } catch (error) {
+        console.error('Error creating payment intent:', error);
+        res.status(500).send('Error creating payment intent');
+      }
+    });
+  
+    
+    
+    
 
 
     
