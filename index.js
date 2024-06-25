@@ -290,7 +290,29 @@ async function run() {
       }
     });
     
-   
+    // Fetch all contact requests
+    app.get('/contact-requests', verifyToken,  async (req, res) => {
+      try {
+        const result = await paymentCollection.find().toArray();
+        res.send(result);
+      } catch (error) {
+        console.error('Error fetching contact requests:', error);
+        res.status(500).send('Error fetching contact requests');
+      }
+    });
+
+    // Delete a contact request by ID
+    app.delete('/contact-requests/:id', verifyToken, async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await paymentCollection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        console.error('Error deleting contact request:', error);
+        res.status(500).send('Error deleting contact request');
+      }
+    });
 
 
     
